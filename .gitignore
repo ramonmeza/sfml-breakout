@@ -1,5 +1,13 @@
 /build*
 
+# assets
+data/*
+!data/textures
+data/textures/*
+!data/config.ini
+!data/textures/player.png
+
+
 ###################
 # CMake.gitignore #
 ###################
