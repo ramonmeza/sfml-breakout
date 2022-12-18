@@ -5,6 +5,7 @@ data/*
 !data/textures
 data/textures/*
 !data/config.ini
+!data/textures/ball.png
 !data/textures/player.png
 
 

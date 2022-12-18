@@ -2,8 +2,9 @@
 
 using namespace game;
 
-MovePlayerCommand::MovePlayerCommand(GameObject *object, const sf::Vector2f &delta, float min_x, float max_x) : Command(object), delta(delta)
+MovePlayerCommand::MovePlayerCommand(Player *object, const sf::Vector2f &delta, float min_x, float max_x) : Command(object)
 {
+    this->delta = delta;
     this->min_x = min_x;
     this->max_x = max_x;
 }

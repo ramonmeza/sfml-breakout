@@ -5,56 +5,70 @@
 #include <INIReader.h>
 #include <SFML/Graphics.hpp>
 
+#include <game/ball.hh>
 #include <game/command.hh>
+#include <game/move_ball_command.hh>
 #include <game/move_player_command.hh>
 #include <game/player.hh>
 #include <utils/console.hh>
 
-const sf::Keyboard::Key MOVE_LEFT = sf::Keyboard::Left;
-const sf::Keyboard::Key MOVE_RIGHT = sf::Keyboard::Right;
+using namespace game;
+using namespace sf;
+using namespace std;
+using namespace utils;
+
+const Keyboard::Key MOVE_LEFT = Keyboard::Left;
+const Keyboard::Key MOVE_RIGHT = Keyboard::Right;
 
 int main(int argc, char *argv[])
 {
-    std::cout << "Ready to play some " << utils::console::colorize("Breakout", utils::console::ForegroundColor::Red, utils::console::BackgroundColor::White, utils::console::FormatAttribute::Bold, utils::console::ResetFormatAttribute::All) << "?" << std::endl;
+    cout << "Ready to play some " << console::colorize("Breakout", console::ForegroundColor::Red, console::BackgroundColor::White, console::FormatAttribute::Bold, console::ResetFormatAttribute::All) << "?" << endl;
 
     INIReader ini("data/config.ini");
-    const float PLAYER_SPEED = ini.GetFloat("player", "speed", 500);
 
-    sf::RenderWindow window(sf::VideoMode(ini.GetInteger("window", "width", 800), ini.GetInteger("window", "height", 600)), "SFML Breakout");
-    sf::CircleShape ball(ini.GetFloat("ball", "radius", 5));
-    ball.setFillColor(sf::Color::Green);
+    RenderWindow window(VideoMode(ini.GetInteger("window", "width", 800), ini.GetInteger("window", "height", 600)), "SFML Breakout");
 
-    auto player_size = sf::Vector2f(ini.GetFloat("player.size", "x", 1), ini.GetFloat("player.size", "y", 1));
-    auto player_spawn = sf::Vector2f(ini.GetFloat("player.position", "x", 0), ini.GetFloat("player.position", "y", 0));
-    game::Player player(player_size, player_spawn);
+    auto ball_scale = Vector2f(ini.GetFloat("ball", "scale", 1), ini.GetFloat("ball", "scale", 1));
+    auto ball_spawn = Vector2f(ini.GetFloat("ball.position", "x", 0), ini.GetFloat("ball.position", "y", 0));
+    auto ball_direction = Vector2f(1, 1);
+    auto ball_speed = ini.GetFloat("ball", "speed", 400);
+    Ball ball(ball_scale, ball_spawn, ball_direction, ball_speed);
 
-    std::queue<std::unique_ptr<game::Command>> commands;
+    const float PLAYER_SPEED = ini.GetFloat("player", "speed", 600);
+    auto player_scale = Vector2f(ini.GetFloat("player", "scale", 1), ini.GetFloat("player", "scale", 1));
+    auto player_spawn = Vector2f(ini.GetFloat("player.position", "x", 0), ini.GetFloat("player.position", "y", 0));
+    Player player(player_scale, player_spawn);
 
-    sf::Clock clock;
+    queue<unique_ptr<Command>> commands;
+
+    Clock clock;
     while (window.isOpen())
     {
         float delta = clock.getElapsedTime().asSeconds();
         clock.restart();
 
         // handle events
-        sf::Event event;
+        Event event;
         while (window.pollEvent(event))
         {
-            if (event.type == sf::Event::Closed)
+            if (event.type == Event::Closed)
                 window.close();
         }
 
-        // update
-        if (sf::Keyboard::isKeyPressed(MOVE_LEFT))
+        // update player
+        if (Keyboard::isKeyPressed(MOVE_LEFT))
         {
-            auto pos = sf::Vector2f(-PLAYER_SPEED, 0) * delta;
-            commands.push(std::make_unique<game::MovePlayerCommand>(&player, pos, 0, window.getSize().x));
+            auto pos = Vector2f(-PLAYER_SPEED, 0) * delta;
+            commands.push(make_unique<MovePlayerCommand>(&player, pos, 0, window.getSize().x));
         }
-        if (sf::Keyboard::isKeyPressed(MOVE_RIGHT))
+        if (Keyboard::isKeyPressed(MOVE_RIGHT))
         {
-            auto pos = sf::Vector2f(PLAYER_SPEED, 0) * delta;
-            commands.push(std::make_unique<game::MovePlayerCommand>(&player, pos, 0, window.getSize().x));
+            auto pos = Vector2f(PLAYER_SPEED, 0) * delta;
+            commands.push(make_unique<MovePlayerCommand>(&player, pos, 0, window.getSize().x));
         }
+
+        // update ball
+        commands.push(make_unique<MoveBallCommand>(&ball, window.getSize(), delta));
 
         // perform commands
         while (!commands.empty())
